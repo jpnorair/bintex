@@ -1,6 +1,6 @@
 About BinTex
 ============
-http://www.indigresso.com/wiki/opentag:otlibext:bintex
+http://www.indigresso.com/wiki/doku.php?id=opentag:otlibext:bintex
 
 BinTex is a very simple markup language for notating binary datastreams in human-readable text.  It might not even be considered a markup-language, but, in any case, it is a nice way to write data.
 
