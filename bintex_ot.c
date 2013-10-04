@@ -24,7 +24,7 @@
   ******************************************************************************
   */
 
-#include "bintex.h"
+#include "bintex_ot.h"
 
 
 #define IS_WHITESPACE(VAL)  ((VAL==' ')||(VAL=='\r')||(VAL=='\n')||(VAL=='\t'))
@@ -33,6 +33,7 @@
 
 typedef unsigned char u8;
 typedef unsigned short u16;
+typedef unsigned long u32;
 
 
 typedef enum {
