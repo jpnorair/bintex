@@ -122,12 +122,11 @@ extern "C" {
   */
 typedef struct {
     int         alloc;
-    int         length;
     uint16_t    options;
-    uint8_t*    front;
-    uint8_t*    back;
     uint8_t*    getcursor;
     uint8_t*    putcursor;
+    uint8_t*    front;
+    uint8_t*    back;
 } ot_queue;
 
 
@@ -228,7 +227,24 @@ void q_rebase(ot_queue* q, uint8_t* buffer);
 
 
 
+/** @brief Copies one Queue "object" to another, without copying the data
+  * @param q1       (ot_queue*) Queue to copy into
+  * @param q2       (ot_queue*) Queue to copy from
+  * @retval none
+  * @ingroup Queue
+  */
 void q_copy(ot_queue* q1, ot_queue* q2);
+
+
+
+/** @brief Returns the length of the queue
+  * @param q        (ot_queue*) Queue to determine length 
+  * @retval none
+  * @ingroup Queue
+  */
+int16_t q_length(ot_queue* q);
+int16_t q_span(ot_queue* q);
+int16_t q_space(ot_queue* q);
 
 
 

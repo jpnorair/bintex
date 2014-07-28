@@ -198,7 +198,7 @@ int bintex_ss(unsigned char *string, unsigned char* stream_out, int size) {
 
 
 // Input Parser Tester (comment out when using library)
-#ifdef __DEBUG__
+#if (0) //defined(__DEBUG__)
 int main(int argc, char** argv) {
     //return parsefile_main(argc, argv);
     return parsestring_main(argc, argv);
@@ -450,13 +450,13 @@ int sub_gethexblock(void* stream, ot_queue* msg) {
 
 int sub_getdecblock(void* stream, ot_queue* msg) {
     int status = 0;
-    int bytes_written = msg->length;
+    int bytes_written = q_length(msg);
 
     while (status == 0) {
         sub_getdecnum(&status, stream, msg);
     }
 
-    bytes_written = msg->length - bytes_written;
+    bytes_written = q_length(msg) - bytes_written;
     return bytes_written;
 }
 
@@ -672,6 +672,7 @@ void q_rebase(ot_queue *q, uint8_t* buffer) {
     q->front        = buffer;
     q->getcursor    = buffer;
     q->putcursor    = buffer;
+    q->back         = buffer;
 }
 
 
@@ -680,13 +681,27 @@ void q_copy(ot_queue* q1, ot_queue* q2) {
 }
 
 
+int16_t q_length(ot_queue* q) {
+    return (q->putcursor - q->front);
+}
+
+int16_t q_span(ot_queue* q) {
+    return (q->putcursor - q->getcursor);
+}
+
+int16_t q_space(ot_queue* q) {
+    return (q->back - q->putcursor);
+}
+
+
+
 
 void q_empty(ot_queue* q) {
-    q->length       = 0;
-    q->options      = 0;
-    q->back         = q->front + q->alloc;
-    q->putcursor    = q->front;
-    q->getcursor    = q->front;
+    //#q->length           = 0;
+    q->options          = 0;
+    q->back             = q->front + q->alloc;
+    q->putcursor        = q->front;
+    q->getcursor        = q->front;
 }
 
 
@@ -697,8 +712,8 @@ uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {
     if (offset >= q->alloc) 
         return NULL;  
     
-    q->length          = offset;
     q->options         = options;
+    //#q->length          = offset;
     q->putcursor      += offset;
     q->getcursor      += offset;
     return q->getcursor;
@@ -716,9 +731,8 @@ uint8_t* q_markbyte(ot_queue* q, int shift) {
 
 
 void q_writebyte(ot_queue* q, uint8_t byte_in) {
-    *(q->putcursor) = byte_in;
-    q->putcursor++;
-    q->length++;
+    *q->putcursor++ = byte_in;
+    //#q->length++;
 }
 
 
@@ -728,15 +742,14 @@ void q_writeshort(ot_queue* q, uint16_t short_in) {
     data = (uint8_t*)&short_in;
 
 #   ifdef __BIG_ENDIAN__
-        q->putcursor[0] = data[0];
-        q->putcursor[1] = data[1];
+        *q->putcursor++ = data[0];
+        *q->putcursor++ = data[1];
 #   else
-        q->putcursor[0] = data[1];
-        q->putcursor[1] = data[0];
+        *q->putcursor++ = data[1];
+        *q->putcursor++ = data[0];
 #   endif
     
-    q->putcursor  += 2;
-    q->length     += 2;
+    //#q->length     += 2;
 }
 
 
@@ -747,13 +760,11 @@ void q_writeshort_be(ot_queue* q, uint16_t short_in) {
 
 #   else
         uint8_t* data;
-        data = (uint8_t*)&short_in;
-    
-        q->putcursor[0] = data[0];
-        q->putcursor[1] = data[1];
+        data            = (uint8_t*)&short_in;
+        *q->putcursor++ = data[0];
+        *q->putcursor++ = data[1];
         
-        q->putcursor  += 2;
-        q->length     += 2;
+        //#q->length     += 2;
 #   endif    
 }
 
@@ -764,19 +775,19 @@ void q_writelong(ot_queue* q, uint32_t long_in) {
     data = (uint8_t*)&long_in;
 
 #   ifdef __BIG_ENDIAN__
-        q->putcursor[0] = data[0];
-        q->putcursor[1] = data[1];
-        q->putcursor[2] = data[2];
-        q->putcursor[3] = data[3];
+        *q->putcursor++ = data[0];
+        *q->putcursor++ = data[1];
+        *q->putcursor++ = data[2];
+        *q->putcursor++ = data[3];
 #   else
-        q->putcursor[0] = data[3];
-        q->putcursor[1] = data[2];
-        q->putcursor[2] = data[1];
-        q->putcursor[3] = data[0];
+        *q->putcursor++ = data[3];
+        *q->putcursor++ = data[2];
+        *q->putcursor++ = data[1];
+        *q->putcursor++ = data[0];
 #   endif
     
-    q->putcursor  += 4;
-    q->length     += 4;
+    //q->putcursor  += 4;
+    //#q->length     += 4;
 }
 
 
@@ -791,14 +802,14 @@ uint16_t q_readshort(ot_queue* q) {
     ot_uni16 data;
 
 #   ifdef __BIG_ENDIAN__
-        data.ubyte[0]   = q->getcursor[0];
-        data.ubyte[1]   = q->getcursor[1];
+        data.ubyte[0]   = *q->getcursor++;
+        data.ubyte[1]   = *q->getcursor++;
 #   else
-        data.ubyte[1]   = q->getcursor[0];
-        data.ubyte[0]   = q->getcursor[1];
+        data.ubyte[1]   = *q->getcursor++;
+        data.ubyte[0]   = *q->getcursor++;
 #   endif
     
-    q->getcursor  += 2;
+    //q->getcursor  += 2;
     return data.ushort;
 }
 
@@ -809,9 +820,9 @@ uint16_t q_readshort_be(ot_queue* q) {
         return q_readshort(q);
 #   else
         ot_uni16 data;
-        data.ubyte[0]   = q->getcursor[0];
-        data.ubyte[1]   = q->getcursor[1];
-        q->getcursor  += 2;
+        data.ubyte[0]   = *q->getcursor++;
+        data.ubyte[1]   = *q->getcursor++;
+
         return data.ushort;
 #   endif
 }
@@ -821,25 +832,24 @@ uint32_t q_readlong(ot_queue* q)  {
     ot_uni32 data;
 
 #   ifdef __BIG_ENDIAN__
-        data.ubyte[0]   = q->getcursor[0];
-        data.ubyte[1]   = q->getcursor[1];
-        data.ubyte[2]   = q->getcursor[2];
-        data.ubyte[3]   = q->getcursor[3];
+        data.ubyte[0]   = *q->getcursor++;
+        data.ubyte[1]   = *q->getcursor++;
+        data.ubyte[2]   = *q->getcursor++;
+        data.ubyte[3]   = *q->getcursor++;
 #   else
-        data.ubyte[3]   = q->getcursor[0];
-        data.ubyte[2]   = q->getcursor[1];
-        data.ubyte[1]   = q->getcursor[2];
-        data.ubyte[0]   = q->getcursor[3];
+        data.ubyte[3]   = *q->getcursor++;
+        data.ubyte[2]   = *q->getcursor++;
+        data.ubyte[1]   = *q->getcursor++;
+        data.ubyte[0]   = *q->getcursor++;
 #   endif
     
-    q->getcursor  += 4;
     return data.ulong;
 }
 
 
 void q_writestring(ot_queue* q, uint8_t* string, int length) {
     memcpy(q->putcursor, string, length);
-    q->length      += length;
+    //#q->length      += length;
     q->putcursor   += length;
 }
 
@@ -851,4 +861,30 @@ void q_readstring(ot_queue* q, uint8_t* string, int length) {
 
 
 
+#if (defined(__STDC__) || defined (__POSIX__))
+#include <stdio.h>
+
+void q_print(ot_queue* q) {
+    int length;
+    int i;
+    int row;
+    length = q_length(q);
+    
+    printf("Queue Length/Alloc: %d/%d\n", length, q->alloc);
+    printf("Queue Getcursor:    %d\n", (int)(q->getcursor-q->front));
+    printf("Queue Putcursor:    %d\n", (int)(q->putcursor-q->front));
+    
+    for (i=0, row=0; length>0; ) {
+        length -= 8;
+        row    += (length>0) ? 8 : 8+length;
+        printf("%04X: ", i);
+        for (; i<row; i++) {
+            printf("%02X ", q->front[i]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+#endif
 
