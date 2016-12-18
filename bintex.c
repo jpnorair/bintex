@@ -467,7 +467,7 @@ int sub_getbinnum(int* status, void* stream, ot_queue* msg) {
     int     i = 0;
     int     shift;
     char    next;
-    char    byte;
+    char    byte = 0;
     char    buf[33];
     
     digits = sub_buffernum(status, stream, buf, 32);
@@ -561,7 +561,7 @@ char sub_char2hex(char* output, char input) {
 
 int sub_getdecnum(int* status, void* stream, ot_queue* msg) {
     int     digits;
-    char    next;
+  //char    next;
     char    buf[16];
     int     sign    = 1;
     int     force_u = 0;
