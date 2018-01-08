@@ -202,7 +202,8 @@ int main(int argc, char** argv);
 
 
 
-
+///@note I'm not sure what was the intent of exposing these queue prototypes
+#ifdef Q_PROTOTYPES
 
 
 /** @brief Generic initialization routine for Queues.
@@ -351,7 +352,7 @@ void q_writestring(ot_queue* q, uint8_t* string, int length);
 void q_readstring(ot_queue* q, uint8_t* string, int length);
 
 
-
+#endif
 
 
 

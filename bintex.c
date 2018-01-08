@@ -65,20 +65,20 @@ char sub_char2hex(char* output, char input);
 int sub_getdecnum(int* status, void* stream, ot_queue* msg);
 int sub_buffernum(int* status, void* stream, char* buf, int limit);
 
-void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
-void q_rebase(ot_queue *q, uint8_t* buffer);
-void q_copy(ot_queue* q1, ot_queue* q2);
-void q_empty(ot_queue* q);
-uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
-uint8_t* q_markbyte(ot_queue* q, int shift);
-void q_writebyte(ot_queue* q, uint8_t byte_in);
-void q_writeshort(ot_queue* q, uint16_t short_in);
-void q_writeshort_be(ot_queue* q, uint16_t short_in);
-void q_writelong(ot_queue* q, uint32_t long_in);
-uint8_t q_readbyte(ot_queue* q);
-uint16_t q_readshort(ot_queue* q);
-uint16_t q_readshort_be(ot_queue* q);
-uint32_t q_readlong(ot_queue* q);
+static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
+static void q_rebase(ot_queue *q, uint8_t* buffer);
+static void q_copy(ot_queue* q1, ot_queue* q2);
+static void q_empty(ot_queue* q);
+static uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
+static uint8_t* q_markbyte(ot_queue* q, int shift);
+static void q_writebyte(ot_queue* q, uint8_t byte_in);
+static void q_writeshort(ot_queue* q, uint16_t short_in);
+static void q_writeshort_be(ot_queue* q, uint16_t short_in);
+static void q_writelong(ot_queue* q, uint32_t long_in);
+static uint8_t q_readbyte(ot_queue* q);
+static uint16_t q_readshort(ot_queue* q);
+static uint16_t q_readshort_be(ot_queue* q);
+static uint32_t q_readlong(ot_queue* q);
 
 
 
@@ -659,7 +659,7 @@ int sub_buffernum(int* status, void* stream, char* buf, int limit) {
 
 
 
-void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
+static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
     q->alloc    = alloc;
     q->front    = buffer;
     q->back     = buffer+alloc;
@@ -668,7 +668,7 @@ void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
 
 
 
-void q_rebase(ot_queue *q, uint8_t* buffer) {
+static void q_rebase(ot_queue *q, uint8_t* buffer) {
     q->front        = buffer;
     q->getcursor    = buffer;
     q->putcursor    = buffer;
@@ -676,27 +676,27 @@ void q_rebase(ot_queue *q, uint8_t* buffer) {
 }
 
 
-void q_copy(ot_queue* q1, ot_queue* q2) {
+static void q_copy(ot_queue* q1, ot_queue* q2) {
     memcpy((uint8_t*)q1, (uint8_t*)q2, sizeof(ot_queue));
 }
 
 
-int16_t q_length(ot_queue* q) {
+static int16_t q_length(ot_queue* q) {
     return (q->putcursor - q->front);
 }
 
-int16_t q_span(ot_queue* q) {
+static int16_t q_span(ot_queue* q) {
     return (q->putcursor - q->getcursor);
 }
 
-int16_t q_space(ot_queue* q) {
+static int16_t q_space(ot_queue* q) {
     return (q->back - q->putcursor);
 }
 
 
 
 
-void q_empty(ot_queue* q) {
+static void q_empty(ot_queue* q) {
     //#q->length           = 0;
     q->options          = 0;
     q->back             = q->front + q->alloc;
@@ -706,7 +706,7 @@ void q_empty(ot_queue* q) {
 
 
 
-uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {  
+static uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {  
     q_empty(q);
 
     if (offset >= q->alloc) 
@@ -721,7 +721,7 @@ uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {
 
 
 
-uint8_t* q_markbyte(ot_queue* q, int shift) {
+static uint8_t* q_markbyte(ot_queue* q, int shift) {
     uint8_t* output;
     output          = q->getcursor;
     q->getcursor   += shift;
@@ -730,14 +730,14 @@ uint8_t* q_markbyte(ot_queue* q, int shift) {
 
 
 
-void q_writebyte(ot_queue* q, uint8_t byte_in) {
+static void q_writebyte(ot_queue* q, uint8_t byte_in) {
     *q->putcursor++ = byte_in;
     //#q->length++;
 }
 
 
 
-void q_writeshort(ot_queue* q, uint16_t short_in) {
+static void q_writeshort(ot_queue* q, uint16_t short_in) {
     uint8_t* data;
     data = (uint8_t*)&short_in;
 
@@ -754,7 +754,7 @@ void q_writeshort(ot_queue* q, uint16_t short_in) {
 
 
 
-void q_writeshort_be(ot_queue* q, uint16_t short_in) {
+static void q_writeshort_be(ot_queue* q, uint16_t short_in) {
 #   ifdef __BIG_ENDIAN__
         q_writeshort(q, short_in);
 
@@ -770,7 +770,7 @@ void q_writeshort_be(ot_queue* q, uint16_t short_in) {
 
 
 
-void q_writelong(ot_queue* q, uint32_t long_in) {
+static void q_writelong(ot_queue* q, uint32_t long_in) {
     uint8_t* data;
     data = (uint8_t*)&long_in;
 
@@ -792,13 +792,13 @@ void q_writelong(ot_queue* q, uint32_t long_in) {
 
 
 
-uint8_t q_readbyte(ot_queue* q) {
+static uint8_t q_readbyte(ot_queue* q) {
     return *(q->getcursor++);
 }
 
 
 
-uint16_t q_readshort(ot_queue* q) {
+static uint16_t q_readshort(ot_queue* q) {
     ot_uni16 data;
 
 #   ifdef __BIG_ENDIAN__
@@ -815,7 +815,7 @@ uint16_t q_readshort(ot_queue* q) {
 
 
 
-uint16_t q_readshort_be(ot_queue* q) {
+static uint16_t q_readshort_be(ot_queue* q) {
 #   ifdef __BIG_ENDIAN__
         return q_readshort(q);
 #   else
@@ -828,7 +828,7 @@ uint16_t q_readshort_be(ot_queue* q) {
 }
 
 
-uint32_t q_readlong(ot_queue* q)  {
+static uint32_t q_readlong(ot_queue* q)  {
     ot_uni32 data;
 
 #   ifdef __BIG_ENDIAN__
@@ -847,14 +847,14 @@ uint32_t q_readlong(ot_queue* q)  {
 }
 
 
-void q_writestring(ot_queue* q, uint8_t* string, int length) {
+static void q_writestring(ot_queue* q, uint8_t* string, int length) {
     memcpy(q->putcursor, string, length);
     //#q->length      += length;
     q->putcursor   += length;
 }
 
 
-void q_readstring(ot_queue* q, uint8_t* string, int length) {
+static void q_readstring(ot_queue* q, uint8_t* string, int length) {
     memcpy(string, q->getcursor, length);
     q->getcursor += length;
 }
@@ -864,7 +864,7 @@ void q_readstring(ot_queue* q, uint8_t* string, int length) {
 #if (defined(__STDC__) || defined (__POSIX__))
 #include <stdio.h>
 
-void q_print(ot_queue* q) {
+static void q_print(ot_queue* q) {
     int length;
     int i;
     int row;
