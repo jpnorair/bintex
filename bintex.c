@@ -65,21 +65,6 @@ char sub_char2hex(char* output, char input);
 int sub_getdecnum(int* status, void* stream, ot_queue* msg);
 int sub_buffernum(int* status, void* stream, char* buf, int limit);
 
-void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
-void q_rebase(ot_queue *q, uint8_t* buffer);
-void q_copy(ot_queue* q1, ot_queue* q2);
-void q_empty(ot_queue* q);
-uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
-uint8_t* q_markbyte(ot_queue* q, int shift);
-void q_writebyte(ot_queue* q, uint8_t byte_in);
-void q_writeshort(ot_queue* q, uint16_t short_in);
-void q_writeshort_be(ot_queue* q, uint16_t short_in);
-void q_writelong(ot_queue* q, uint32_t long_in);
-uint8_t q_readbyte(ot_queue* q);
-uint16_t q_readshort(ot_queue* q);
-uint16_t q_readshort_be(ot_queue* q);
-uint32_t q_readlong(ot_queue* q);
-
 
 
 typedef union {
@@ -97,6 +82,164 @@ typedef union {
     uint8_t     ubyte[4];
     int8_t      sbyte[4];
 } ot_uni32;
+
+
+
+
+
+
+
+
+/** @brief Generic initialization routine for Queues.
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param buffer   (uint8_t*) Queue data buffer
+  * @param alloc    (uint16_t) allocated bytes for queue
+  * @retval none
+  * @ingroup Queue
+  */
+static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
+
+
+/** @brief Reposition the Queue pointers to a new buffer, don't change attributes
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param buffer   (uint8_t*) Queue data buffer
+  * @retval none
+  * @ingroup Queue
+  *
+  * Most commonly used when multiple frames are in the same queue.
+  */
+static void q_rebase(ot_queue* q, uint8_t* buffer);
+
+
+
+/** @brief Copies one Queue "object" to another, without copying the data
+  * @param q1       (ot_queue*) Queue to copy into
+  * @param q2       (ot_queue*) Queue to copy from
+  * @retval none
+  * @ingroup Queue
+  */
+static void q_copy(ot_queue* q1, ot_queue* q2);
+
+
+
+/** @brief Returns the length of the queue
+  * @param q        (ot_queue*) Queue to determine length 
+  * @retval none
+  * @ingroup Queue
+  */
+static int16_t q_length(ot_queue* q);
+static int16_t q_span(ot_queue* q);
+static int16_t q_space(ot_queue* q);
+
+
+
+/** @brief Empties the supplied Queue, but doesn't actually erase data
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @retval none
+  * @ingroup Queue
+  */
+static void q_empty(ot_queue* q);
+
+
+/** @brief Starts a queue by loading in config data
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param offset   (int) bytes to offset the fist data writes from the front
+  * @param options  (uint16_t) option bits.  user-defined usage.
+  * @retval uint8_t*  Pointer to queue get & putcursor, or NULL if an error
+  * @ingroup Queue
+  */
+static uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
+
+
+
+/** @brief Returns the current getcursor position, and then moves it forward
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param shift    (int) bytes to move getcursor forward
+  * @retval uint8_t*  Pointer to getcursor at original position
+  * @ingroup Queue
+  */
+static uint8_t* q_markbyte(ot_queue* q, int shift);
+
+
+/** @brief Writes a byte to a Queue's putcursor, and advances it
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param byte_in  (uint8_t) byte to write
+  * @retval none
+  * @ingroup Queue
+  */
+static void q_writebyte(ot_queue* q, uint8_t byte_in);
+
+
+/** @brief Writes a 16 bit short integer to the Queue's putcursor, and advances it
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param short_in (uint16_t) Short integer to write
+  * @retval none
+  * @ingroup Queue
+  * @note The _be variant will use big endian, which is fast for copying data
+  *       from the UDB, given that the UDB is big endian and DASH7 also uses big
+  *       endian for data streams.  The normal variant will do endian conversion
+  *       in order to move integers from memory to the queue.
+  */
+static void q_writeshort(ot_queue* q, uint16_t short_in);
+static void q_writeshort_be(ot_queue* q, uint16_t short_in);
+
+
+
+/** @brief Writes a 32 bit long integer to the Queue's putcursor, and advances it
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param long_in  (uint32_t) Long integer to write
+  * @retval none
+  * @ingroup Queue
+  * @note The _be variant will use big endian, which is fast for copying data
+  *       from the UDB, given that the UDB is big endian and DASH7 also uses big
+  *       endian for data streams.  The normal variant will do endian conversion
+  *       in order to move integers from memory to the queue.
+  */
+static void q_writelong(ot_queue* q, uint32_t long_in);
+
+
+
+/** @brief Reads a byte at the Queue's getcursor, and advances it
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @retval uint8_t   Byte read
+  * @ingroup Queue
+  */
+static uint8_t q_readbyte(ot_queue* q);
+
+
+/** @brief Reads a 16 bit short integer at the Queue's getcursor, and advances it
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @retval uint16_t  Short integer read.
+  * @ingroup Queue
+  * @note The _be variant will use big endian, which is fast for copying data
+  *       from the UDB, given that the UDB is big endian and DASH7 also uses big
+  *       endian for data streams.  The normal variant will do endian conversion
+  *       in order to move integers from memory to the queue.
+  */
+static uint16_t q_readshort(ot_queue* q);
+static uint16_t q_readshort_be(ot_queue* q);
+
+
+/** @brief Reads a 32 bit long integer at the Queue's getcursor, and advances it
+  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @retval uint32_t  Long integer read.
+  * @ingroup Queue
+  * @note The _be variant will use big endian, which is fast for copying data
+  *       from the UDB, given that the UDB is big endian and DASH7 also uses big
+  *       endian for data streams.  The normal variant will do endian conversion
+  *       in order to move integers from memory to the queue.
+  */
+static uint32_t q_readlong(ot_queue* q);
+
+
+static void q_writestring(ot_queue* q, uint8_t* string, int length);
+static void q_readstring(ot_queue* q, uint8_t* string, int length);
+
+
+
+
+
+
 
 
 
@@ -655,11 +798,11 @@ int sub_buffernum(int* status, void* stream, char* buf, int limit) {
 
 
 
+/** Internal Queue Module Implementation.
+    Could be broken into separate files
+ */
 
-
-
-
-void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
+static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
     q->alloc    = alloc;
     q->front    = buffer;
     q->back     = buffer+alloc;
@@ -668,7 +811,7 @@ void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
 
 
 
-void q_rebase(ot_queue *q, uint8_t* buffer) {
+static void q_rebase(ot_queue *q, uint8_t* buffer) {
     q->front        = buffer;
     q->getcursor    = buffer;
     q->putcursor    = buffer;
@@ -676,27 +819,27 @@ void q_rebase(ot_queue *q, uint8_t* buffer) {
 }
 
 
-void q_copy(ot_queue* q1, ot_queue* q2) {
+static void q_copy(ot_queue* q1, ot_queue* q2) {
     memcpy((uint8_t*)q1, (uint8_t*)q2, sizeof(ot_queue));
 }
 
 
-int16_t q_length(ot_queue* q) {
+static int16_t q_length(ot_queue* q) {
     return (q->putcursor - q->front);
 }
 
-int16_t q_span(ot_queue* q) {
+static int16_t q_span(ot_queue* q) {
     return (q->putcursor - q->getcursor);
 }
 
-int16_t q_space(ot_queue* q) {
+static int16_t q_space(ot_queue* q) {
     return (q->back - q->putcursor);
 }
 
 
 
 
-void q_empty(ot_queue* q) {
+static void q_empty(ot_queue* q) {
     //#q->length           = 0;
     q->options          = 0;
     q->back             = q->front + q->alloc;
@@ -706,7 +849,7 @@ void q_empty(ot_queue* q) {
 
 
 
-uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {  
+static uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {  
     q_empty(q);
 
     if (offset >= q->alloc) 
@@ -721,7 +864,7 @@ uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {
 
 
 
-uint8_t* q_markbyte(ot_queue* q, int shift) {
+static uint8_t* q_markbyte(ot_queue* q, int shift) {
     uint8_t* output;
     output          = q->getcursor;
     q->getcursor   += shift;
@@ -730,14 +873,14 @@ uint8_t* q_markbyte(ot_queue* q, int shift) {
 
 
 
-void q_writebyte(ot_queue* q, uint8_t byte_in) {
+static void q_writebyte(ot_queue* q, uint8_t byte_in) {
     *q->putcursor++ = byte_in;
     //#q->length++;
 }
 
 
 
-void q_writeshort(ot_queue* q, uint16_t short_in) {
+static void q_writeshort(ot_queue* q, uint16_t short_in) {
     uint8_t* data;
     data = (uint8_t*)&short_in;
 
@@ -754,7 +897,7 @@ void q_writeshort(ot_queue* q, uint16_t short_in) {
 
 
 
-void q_writeshort_be(ot_queue* q, uint16_t short_in) {
+static void q_writeshort_be(ot_queue* q, uint16_t short_in) {
 #   ifdef __BIG_ENDIAN__
         q_writeshort(q, short_in);
 
@@ -770,7 +913,7 @@ void q_writeshort_be(ot_queue* q, uint16_t short_in) {
 
 
 
-void q_writelong(ot_queue* q, uint32_t long_in) {
+static void q_writelong(ot_queue* q, uint32_t long_in) {
     uint8_t* data;
     data = (uint8_t*)&long_in;
 
@@ -792,13 +935,13 @@ void q_writelong(ot_queue* q, uint32_t long_in) {
 
 
 
-uint8_t q_readbyte(ot_queue* q) {
+static uint8_t q_readbyte(ot_queue* q) {
     return *(q->getcursor++);
 }
 
 
 
-uint16_t q_readshort(ot_queue* q) {
+static uint16_t q_readshort(ot_queue* q) {
     ot_uni16 data;
 
 #   ifdef __BIG_ENDIAN__
@@ -815,7 +958,7 @@ uint16_t q_readshort(ot_queue* q) {
 
 
 
-uint16_t q_readshort_be(ot_queue* q) {
+static uint16_t q_readshort_be(ot_queue* q) {
 #   ifdef __BIG_ENDIAN__
         return q_readshort(q);
 #   else
@@ -828,7 +971,7 @@ uint16_t q_readshort_be(ot_queue* q) {
 }
 
 
-uint32_t q_readlong(ot_queue* q)  {
+static uint32_t q_readlong(ot_queue* q)  {
     ot_uni32 data;
 
 #   ifdef __BIG_ENDIAN__
@@ -847,14 +990,14 @@ uint32_t q_readlong(ot_queue* q)  {
 }
 
 
-void q_writestring(ot_queue* q, uint8_t* string, int length) {
+static void q_writestring(ot_queue* q, uint8_t* string, int length) {
     memcpy(q->putcursor, string, length);
     //#q->length      += length;
     q->putcursor   += length;
 }
 
 
-void q_readstring(ot_queue* q, uint8_t* string, int length) {
+static void q_readstring(ot_queue* q, uint8_t* string, int length) {
     memcpy(string, q->getcursor, length);
     q->getcursor += length;
 }
@@ -864,7 +1007,7 @@ void q_readstring(ot_queue* q, uint8_t* string, int length) {
 #if (defined(__STDC__) || defined (__POSIX__))
 #include <stdio.h>
 
-void q_print(ot_queue* q) {
+static void q_print(ot_queue* q) {
     int length;
     int i;
     int row;

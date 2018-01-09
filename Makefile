@@ -1,6 +1,6 @@
 CC=gcc
 
-TARGET      := libbintex.a
+BINTEX_TARGET      := libbintex.a
 
 SRCDIR      := .
 INCDIR      := .
@@ -24,7 +24,7 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJE
 
 
 
-all: resources $(TARGET)
+all: resources $(BINTEX_TARGET)
 remake: cleaner all
 	
 
