@@ -65,9 +65,13 @@ char sub_char2hex(char* output, char input);
 int sub_getdecnum(int* status, void* stream, ot_queue* msg);
 int sub_buffernum(int* status, void* stream, char* buf, int limit);
 
+
 static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
 static void q_rebase(ot_queue *q, uint8_t* buffer);
 static void q_copy(ot_queue* q1, ot_queue* q2);
+static int16_t q_length(ot_queue* q);
+static int16_t q_span(ot_queue* q);
+static int16_t q_space(ot_queue* q);
 static void q_empty(ot_queue* q);
 static uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
 static uint8_t* q_markbyte(ot_queue* q, int shift);
@@ -79,6 +83,10 @@ static uint8_t q_readbyte(ot_queue* q);
 static uint16_t q_readshort(ot_queue* q);
 static uint16_t q_readshort_be(ot_queue* q);
 static uint32_t q_readlong(ot_queue* q);
+static void q_writestring(ot_queue* q, uint8_t* string, int length);
+static void q_readstring(ot_queue* q, uint8_t* string, int length);
+
+
 
 
 typedef union {
