@@ -42,6 +42,7 @@ clean:
 
 #Full Clean, Objects and Binaries
 cleaner: clean
+	@$(RM) -rf libbintex.a
 	@$(RM) -rf $(TARGETDIR)
 
 #Pull in dependency info for *existing* .o files
