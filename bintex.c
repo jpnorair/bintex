@@ -659,8 +659,8 @@ int sub_buffernum(int* status, void* stream, char* buf, int limit) {
 
 
 
-
-
+    Could be broken into separate files
+ */
 
 static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
     q->alloc    = alloc;

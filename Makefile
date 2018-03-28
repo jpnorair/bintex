@@ -3,13 +3,15 @@ CC=gcc
 THISMACHINE := $(shell uname -srm | sed -e 's/ /-/g')
 THISSYSTEM	:= $(shell uname -s)
 
-TARGETLIB   ?= libbintex.$(THISSYSTEM).a
-TARGETDIR   ?= ./../_hbpkg/$(THISMACHINE)/bintex
+VERSION     ?= "0.5.0"
+PACKAGEDIR  ?= ./../_hbpkg/$(THISMACHINE)/bintex.$(VERSION)
+
+BINTEX_TARGET      := libbintex.a
 
 SRCDIR      := .
 INCDIR      := .
 BUILDDIR    := build
-PRODUCTDIR  := bin
+TARGETDIR   := bin
 RESDIR      := 
 SRCEXT      := c
 DEPEXT      := d
@@ -28,14 +30,16 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJE
 
 
 
-all: resources $(TARGETLIB)
+all: resources $(BINTEX_TARGET)
 remake: cleaner all
 	
-#Make the Directories
+
 install:
-	mkdir -p $(TARGETDIR)
-	cp ./bintex.h $(TARGETDIR)
-	cp $(PRODUCTDIR)/* $(TARGETDIR)
+	@mkdir -p $(PACKAGEDIR)
+	@cp -R ./libbintex.a $(PACKAGEDIR)/
+	@cp -R ./*.h $(PACKAGEDIR)/
+	@rm -f $(PACKAGEDIR)/../bintex
+	@ln -s bintex.$(VERSION) ./$(PACKAGEDIR)/../bintex
 
 
 #Copy Resources from Resources Directory to Target Directory
@@ -43,7 +47,7 @@ resources: directories
 
 #Make the Directories
 directories:
-	@mkdir -p $(PRODUCTDIR)
+	@mkdir -p $(TARGETDIR)
 	@mkdir -p $(BUILDDIR)
 
 #Clean only Objects
@@ -52,19 +56,16 @@ clean:
 
 #Full Clean, Objects and Binaries
 cleaner: clean
-	@$(RM) -rf $(PRODUCTDIR)
+	@$(RM) -rf libbintex.a
+	@$(RM) -rf $(TARGETDIR)
 
 #Pull in dependency info for *existing* .o files
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
 
 #Build the static library
-libbintex.Darwin.a: $(OBJECTS)
-	ar -rcs $(PRODUCTDIR)/libbintex.a $(OBJECTS)
-	ranlib $(PRODUCTDIR)/libbintex.a
-
-libbintex.Linux.a: $(OBJECTS)
-	ar -rcs $(PRODUCTDIR)/libbintex.a $(OBJECTS)
-	ranlib $(PRODUCTDIR)/libbintex.a
+libbintex.a: $(OBJECTS)
+	ar -rcs ./libbintex.a $(OBJECTS)
+	ranlib libbintex.a
 
 #Compile
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
