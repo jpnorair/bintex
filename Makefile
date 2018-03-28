@@ -1,5 +1,11 @@
 CC=gcc
 
+THISMACHINE := $(shell uname -srm | sed -e 's/ /-/g')
+THISSYSTEM	:= $(shell uname -s)
+
+VERSION     ?= "0.5.0"
+PACKAGEDIR  ?= ./../_hbpkg/$(THISMACHINE)/bintex.$(VERSION)
+
 BINTEX_TARGET      := libbintex.a
 
 SRCDIR      := .
@@ -27,6 +33,14 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJE
 all: resources $(BINTEX_TARGET)
 remake: cleaner all
 	
+
+install:
+	@mkdir -p $(PACKAGEDIR)
+	@cp -R ./libbintex.a $(PACKAGEDIR)/
+	@cp -R ./*.h $(PACKAGEDIR)/
+	@rm -f $(PACKAGEDIR)/../bintex
+	@ln -s bintex.$(VERSION) ./$(PACKAGEDIR)/../bintex
+
 
 #Copy Resources from Resources Directory to Target Directory
 resources: directories
