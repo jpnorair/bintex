@@ -53,41 +53,41 @@ int sub_buffergetc(void* stream);
 int sub_filegetc(void* stream);
 
 
-int sub_parsestream(void* stream, ot_queue* msg);
+int sub_parsestream(void* stream, bintex_q* msg);
 Data_type sub_parse_header(void* stream);
 int sub_passcomment(void* stream);
-int sub_getascii(void* stream, ot_queue* msg);
-int sub_gethexblock(void* stream, ot_queue* msg);
-int sub_getdecblock(void* stream, ot_queue* msg);
-int sub_gethexnum(int* status, void* stream, ot_queue* msg);
-int sub_getbinnum(int* status, void* stream, ot_queue* msg);
+int sub_getascii(void* stream, bintex_q* msg);
+int sub_gethexblock(void* stream, bintex_q* msg);
+int sub_getdecblock(void* stream, bintex_q* msg);
+int sub_gethexnum(int* status, void* stream, bintex_q* msg);
+int sub_getbinnum(int* status, void* stream, bintex_q* msg);
 char sub_char2hex(char* output, char input);
-int sub_getdecnum(int* status, void* stream, ot_queue* msg);
+int sub_getdecnum(int* status, void* stream, bintex_q* msg);
 int sub_buffernum(int* status, void* stream, char* buf, int limit);
 
 
-static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
-static void q_rebase(ot_queue *q, uint8_t* buffer);
-static void q_copy(ot_queue* q1, ot_queue* q2);
-static int16_t q_length(ot_queue* q);
-static int16_t q_span(ot_queue* q);
-static int16_t q_space(ot_queue* q);
-static void q_empty(ot_queue* q);
-static int16_t q_length(ot_queue* q);
-static int16_t q_span(ot_queue* q);
-static int16_t q_space(ot_queue* q);
-static uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
-static uint8_t* q_markbyte(ot_queue* q, int shift);
-static void q_writebyte(ot_queue* q, uint8_t byte_in);
-static void q_writeshort(ot_queue* q, uint16_t short_in);
-static void q_writeshort_be(ot_queue* q, uint16_t short_in);
-static void q_writelong(ot_queue* q, uint32_t long_in);
-static uint8_t q_readbyte(ot_queue* q);
-static uint16_t q_readshort(ot_queue* q);
-static uint16_t q_readshort_be(ot_queue* q);
-static uint32_t q_readlong(ot_queue* q);
-static void q_writestring(ot_queue* q, uint8_t* string, int length);
-static void q_readstring(ot_queue* q, uint8_t* string, int length);
+static void q_init(bintex_q* q, uint8_t* buffer, uint16_t alloc);
+static void q_rebase(bintex_q *q, uint8_t* buffer);
+static void q_copy(bintex_q* q1, bintex_q* q2);
+static int16_t q_length(bintex_q* q);
+static int16_t q_span(bintex_q* q);
+static int16_t q_space(bintex_q* q);
+static void q_empty(bintex_q* q);
+static int16_t q_length(bintex_q* q);
+static int16_t q_span(bintex_q* q);
+static int16_t q_space(bintex_q* q);
+static uint8_t* q_start(bintex_q* q, int offset, uint16_t options);
+static uint8_t* q_markbyte(bintex_q* q, int shift);
+static void q_writebyte(bintex_q* q, uint8_t byte_in);
+static void q_writeshort(bintex_q* q, uint16_t short_in);
+static void q_writeshort_be(bintex_q* q, uint16_t short_in);
+static void q_writelong(bintex_q* q, uint32_t long_in);
+static uint8_t q_readbyte(bintex_q* q);
+static uint16_t q_readshort(bintex_q* q);
+static uint16_t q_readshort_be(bintex_q* q);
+static uint32_t q_readlong(bintex_q* q);
+static void q_writestring(bintex_q* q, uint8_t* string, int length);
+static void q_readstring(bintex_q* q, uint8_t* string, int length);
 
 
 
@@ -110,13 +110,13 @@ typedef union {
 
 
 
-int bintex_iter_fq(FILE* file, ot_queue* msg) {
+int bintex_iter_fq(FILE* file, bintex_q* msg) {
     sub_getc = &sub_filegetc;
     return sub_parsestream((void*)file, msg);
 }
 
 int bintex_fs(FILE* file, unsigned char* stream_out, int size) {
-    ot_queue local;
+    bintex_q local;
     q_init(&local, stream_out, size);
     
     while (1) {
@@ -158,14 +158,14 @@ int bintex_fs(FILE* file, unsigned char* stream_out, int size) {
 
 
 
-int bintex_iter_sq(unsigned char **string, ot_queue* msg, int size) {
+int bintex_iter_sq(unsigned char **string, bintex_q* msg, int size) {
     sub_getc        = &sub_buffergetc;
     buffer_limit    = size;
     return sub_parsestream((void*)string, msg);
 }
 
 int bintex_ss(unsigned char *string, unsigned char* stream_out, int size) {
-    ot_queue local;
+    bintex_q local;
     
     q_init(&local, stream_out, size);
     
@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
 
 int parsefile_main(int argc, char** argv) {
     FILE*   fp;
-    ot_queue    msg;
+    bintex_q    msg;
     uint8_t     msg_buffer[512];
     int         usage_type = 0;
     
@@ -291,7 +291,7 @@ int sub_filegetc(void* stream) {
 
 
 
-int sub_parsestream(void* stream, ot_queue* msg) {
+int sub_parsestream(void* stream, bintex_q* msg) {
     int status;
 
     switch (sub_parse_header(stream)) {
@@ -402,7 +402,7 @@ int sub_passcomment(void* stream) {
 
 
 
-int sub_getascii(void* stream, ot_queue* msg) {
+int sub_getascii(void* stream, bintex_q* msg) {
     char    next;
     int     bytes_written;
     
@@ -442,7 +442,7 @@ int sub_getascii(void* stream, ot_queue* msg) {
 
 
 
-int sub_gethexblock(void* stream, ot_queue* msg) {
+int sub_gethexblock(void* stream, bintex_q* msg) {
     int status = 0;
     int bytes_written;
     bytes_written = q_length(msg);
@@ -458,7 +458,7 @@ int sub_gethexblock(void* stream, ot_queue* msg) {
 
 
 
-int sub_getdecblock(void* stream, ot_queue* msg) {
+int sub_getdecblock(void* stream, bintex_q* msg) {
     int status = 0;
     int bytes_written = q_length(msg);
 
@@ -472,7 +472,7 @@ int sub_getdecblock(void* stream, ot_queue* msg) {
 
 
 
-int sub_getbinnum(int* status, void* stream, ot_queue* msg) {
+int sub_getbinnum(int* status, void* stream, bintex_q* msg) {
     int     digits;
     int     i = 0;
     int     shift;
@@ -505,7 +505,7 @@ int sub_getbinnum(int* status, void* stream, ot_queue* msg) {
 
 
 
-int sub_gethexnum(int* status, void* stream, ot_queue* msg) {
+int sub_gethexnum(int* status, void* stream, bintex_q* msg) {
     int     digits;
     int     i = 0;
     char    next;
@@ -569,7 +569,7 @@ char sub_char2hex(char* output, char input) {
 
 
 
-int sub_getdecnum(int* status, void* stream, ot_queue* msg) {
+int sub_getdecnum(int* status, void* stream, bintex_q* msg) {
     int     digits;
   //char    next;
     char    buf[16];
@@ -669,7 +669,7 @@ int sub_buffernum(int* status, void* stream, char* buf, int limit) {
     Could be broken into separate files
  */
 
-static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
+static void q_init(bintex_q* q, uint8_t* buffer, uint16_t alloc) {
     q->alloc    = alloc;
     q->front    = buffer;
     q->back     = buffer+alloc;
@@ -678,7 +678,7 @@ static void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc) {
 
 
 
-static void q_rebase(ot_queue *q, uint8_t* buffer) {
+static void q_rebase(bintex_q *q, uint8_t* buffer) {
     q->front        = buffer;
     q->getcursor    = buffer;
     q->putcursor    = buffer;
@@ -686,27 +686,27 @@ static void q_rebase(ot_queue *q, uint8_t* buffer) {
 }
 
 
-static void q_copy(ot_queue* q1, ot_queue* q2) {
-    memcpy((uint8_t*)q1, (uint8_t*)q2, sizeof(ot_queue));
+static void q_copy(bintex_q* q1, bintex_q* q2) {
+    memcpy((uint8_t*)q1, (uint8_t*)q2, sizeof(bintex_q));
 }
 
 
-static int16_t q_length(ot_queue* q) {
+static int16_t q_length(bintex_q* q) {
     return (q->putcursor - q->front);
 }
 
-static int16_t q_span(ot_queue* q) {
+static int16_t q_span(bintex_q* q) {
     return (q->putcursor - q->getcursor);
 }
 
-static int16_t q_space(ot_queue* q) {
+static int16_t q_space(bintex_q* q) {
     return (q->back - q->putcursor);
 }
 
 
 
 
-static void q_empty(ot_queue* q) {
+static void q_empty(bintex_q* q) {
     //#q->length           = 0;
     q->options          = 0;
     q->back             = q->front + q->alloc;
@@ -716,7 +716,7 @@ static void q_empty(ot_queue* q) {
 
 
 
-static uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {  
+static uint8_t* q_start(bintex_q* q, int offset, uint16_t options) {  
     q_empty(q);
 
     if (offset >= q->alloc) 
@@ -731,7 +731,7 @@ static uint8_t* q_start(ot_queue* q, int offset, uint16_t options) {
 
 
 
-static uint8_t* q_markbyte(ot_queue* q, int shift) {
+static uint8_t* q_markbyte(bintex_q* q, int shift) {
     uint8_t* output;
     output          = q->getcursor;
     q->getcursor   += shift;
@@ -740,14 +740,14 @@ static uint8_t* q_markbyte(ot_queue* q, int shift) {
 
 
 
-static void q_writebyte(ot_queue* q, uint8_t byte_in) {
+static void q_writebyte(bintex_q* q, uint8_t byte_in) {
     *q->putcursor++ = byte_in;
     //#q->length++;
 }
 
 
 
-static void q_writeshort(ot_queue* q, uint16_t short_in) {
+static void q_writeshort(bintex_q* q, uint16_t short_in) {
     uint8_t* data;
     data = (uint8_t*)&short_in;
 
@@ -764,7 +764,7 @@ static void q_writeshort(ot_queue* q, uint16_t short_in) {
 
 
 
-static void q_writeshort_be(ot_queue* q, uint16_t short_in) {
+static void q_writeshort_be(bintex_q* q, uint16_t short_in) {
 #   ifdef __BIG_ENDIAN__
         q_writeshort(q, short_in);
 
@@ -780,7 +780,7 @@ static void q_writeshort_be(ot_queue* q, uint16_t short_in) {
 
 
 
-static void q_writelong(ot_queue* q, uint32_t long_in) {
+static void q_writelong(bintex_q* q, uint32_t long_in) {
     uint8_t* data;
     data = (uint8_t*)&long_in;
 
@@ -802,13 +802,13 @@ static void q_writelong(ot_queue* q, uint32_t long_in) {
 
 
 
-static uint8_t q_readbyte(ot_queue* q) {
+static uint8_t q_readbyte(bintex_q* q) {
     return *(q->getcursor++);
 }
 
 
 
-static uint16_t q_readshort(ot_queue* q) {
+static uint16_t q_readshort(bintex_q* q) {
     ot_uni16 data;
 
 #   ifdef __BIG_ENDIAN__
@@ -825,7 +825,7 @@ static uint16_t q_readshort(ot_queue* q) {
 
 
 
-static uint16_t q_readshort_be(ot_queue* q) {
+static uint16_t q_readshort_be(bintex_q* q) {
 #   ifdef __BIG_ENDIAN__
         return q_readshort(q);
 #   else
@@ -838,7 +838,7 @@ static uint16_t q_readshort_be(ot_queue* q) {
 }
 
 
-static uint32_t q_readlong(ot_queue* q)  {
+static uint32_t q_readlong(bintex_q* q)  {
     ot_uni32 data;
 
 #   ifdef __BIG_ENDIAN__
@@ -857,14 +857,14 @@ static uint32_t q_readlong(ot_queue* q)  {
 }
 
 
-static void q_writestring(ot_queue* q, uint8_t* string, int length) {
+static void q_writestring(bintex_q* q, uint8_t* string, int length) {
     memcpy(q->putcursor, string, length);
     //#q->length      += length;
     q->putcursor   += length;
 }
 
 
-static void q_readstring(ot_queue* q, uint8_t* string, int length) {
+static void q_readstring(bintex_q* q, uint8_t* string, int length) {
     memcpy(string, q->getcursor, length);
     q->getcursor += length;
 }
@@ -874,7 +874,7 @@ static void q_readstring(ot_queue* q, uint8_t* string, int length) {
 #if (defined(__STDC__) || defined (__POSIX__))
 #include <stdio.h>
 
-static void q_print(ot_queue* q) {
+static void q_print(bintex_q* q) {
     int length;
     int i;
     int row;

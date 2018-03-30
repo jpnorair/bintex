@@ -127,7 +127,7 @@ typedef struct {
     uint8_t*    putcursor;
     uint8_t*    front;
     uint8_t*    back;
-} ot_queue;
+} bintex_q;
 
 
 
@@ -169,7 +169,7 @@ int bintex_ss(unsigned char* string, unsigned char* stream_out, int size);
   * parsing each input BinTex expression in the file.  The File and Queue 
   * objects should be retained by the caller/user.
   */
-int bintex_iter_fq(FILE* file, ot_queue* msg);
+int bintex_iter_fq(FILE* file, bintex_q* msg);
 
 
 
@@ -184,7 +184,7 @@ int bintex_iter_fq(FILE* file, ot_queue* msg);
   * parsing each input BinTex expression in the input string.  The String and 
   * Queue objects should be retained by the caller/user.
   */
-int bintex_iter_sq(unsigned char** string, ot_queue* msg, int size);
+int bintex_iter_sq(unsigned char** string, bintex_q* msg, int size);
 
 
 
@@ -207,87 +207,87 @@ int main(int argc, char** argv);
 
 
 /** @brief Generic initialization routine for Queues.
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param buffer   (uint8_t*) Queue data buffer
   * @param alloc    (uint16_t) allocated bytes for queue
   * @retval none
   * @ingroup Queue
   */
-void q_init(ot_queue* q, uint8_t* buffer, uint16_t alloc);
+void q_init(bintex_q* q, uint8_t* buffer, uint16_t alloc);
 
 
 /** @brief Reposition the Queue pointers to a new buffer, don't change attributes
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param buffer   (uint8_t*) Queue data buffer
   * @retval none
   * @ingroup Queue
   *
   * Most commonly used when multiple frames are in the same queue.
   */
-void q_rebase(ot_queue* q, uint8_t* buffer);
+void q_rebase(bintex_q* q, uint8_t* buffer);
 
 
 
 /** @brief Copies one Queue "object" to another, without copying the data
-  * @param q1       (ot_queue*) Queue to copy into
-  * @param q2       (ot_queue*) Queue to copy from
+  * @param q1       (bintex_q*) Queue to copy into
+  * @param q2       (bintex_q*) Queue to copy from
   * @retval none
   * @ingroup Queue
   */
-void q_copy(ot_queue* q1, ot_queue* q2);
+void q_copy(bintex_q* q1, bintex_q* q2);
 
 
 
 /** @brief Returns the length of the queue
-  * @param q        (ot_queue*) Queue to determine length 
+  * @param q        (bintex_q*) Queue to determine length 
   * @retval none
   * @ingroup Queue
   */
-int16_t q_length(ot_queue* q);
-int16_t q_span(ot_queue* q);
-int16_t q_space(ot_queue* q);
+int16_t q_length(bintex_q* q);
+int16_t q_span(bintex_q* q);
+int16_t q_space(bintex_q* q);
 
 
 
 /** @brief Empties the supplied Queue, but doesn't actually erase data
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @retval none
   * @ingroup Queue
   */
-void q_empty(ot_queue* q);
+void q_empty(bintex_q* q);
 
 
 /** @brief Starts a queue by loading in config data
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param offset   (int) bytes to offset the fist data writes from the front
   * @param options  (uint16_t) option bits.  user-defined usage.
   * @retval uint8_t*  Pointer to queue get & putcursor, or NULL if an error
   * @ingroup Queue
   */
-uint8_t* q_start(ot_queue* q, int offset, uint16_t options);
+uint8_t* q_start(bintex_q* q, int offset, uint16_t options);
 
 
 
 /** @brief Returns the current getcursor position, and then moves it forward
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param shift    (int) bytes to move getcursor forward
   * @retval uint8_t*  Pointer to getcursor at original position
   * @ingroup Queue
   */
-uint8_t* q_markbyte(ot_queue* q, int shift);
+uint8_t* q_markbyte(bintex_q* q, int shift);
 
 
 /** @brief Writes a byte to a Queue's putcursor, and advances it
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param byte_in  (uint8_t) byte to write
   * @retval none
   * @ingroup Queue
   */
-void q_writebyte(ot_queue* q, uint8_t byte_in);
+void q_writebyte(bintex_q* q, uint8_t byte_in);
 
 
 /** @brief Writes a 16 bit short integer to the Queue's putcursor, and advances it
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param short_in (uint16_t) Short integer to write
   * @retval none
   * @ingroup Queue
@@ -296,13 +296,13 @@ void q_writebyte(ot_queue* q, uint8_t byte_in);
   *       endian for data streams.  The normal variant will do endian conversion
   *       in order to move integers from memory to the queue.
   */
-void q_writeshort(ot_queue* q, uint16_t short_in);
-void q_writeshort_be(ot_queue* q, uint16_t short_in);
+void q_writeshort(bintex_q* q, uint16_t short_in);
+void q_writeshort_be(bintex_q* q, uint16_t short_in);
 
 
 
 /** @brief Writes a 32 bit long integer to the Queue's putcursor, and advances it
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @param long_in  (uint32_t) Long integer to write
   * @retval none
   * @ingroup Queue
@@ -311,20 +311,20 @@ void q_writeshort_be(ot_queue* q, uint16_t short_in);
   *       endian for data streams.  The normal variant will do endian conversion
   *       in order to move integers from memory to the queue.
   */
-void q_writelong(ot_queue* q, uint32_t long_in);
+void q_writelong(bintex_q* q, uint32_t long_in);
 
 
 
 /** @brief Reads a byte at the Queue's getcursor, and advances it
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @retval uint8_t   Byte read
   * @ingroup Queue
   */
-uint8_t q_readbyte(ot_queue* q);
+uint8_t q_readbyte(bintex_q* q);
 
 
 /** @brief Reads a 16 bit short integer at the Queue's getcursor, and advances it
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @retval uint16_t  Short integer read.
   * @ingroup Queue
   * @note The _be variant will use big endian, which is fast for copying data
@@ -332,12 +332,12 @@ uint8_t q_readbyte(ot_queue* q);
   *       endian for data streams.  The normal variant will do endian conversion
   *       in order to move integers from memory to the queue.
   */
-uint16_t q_readshort(ot_queue* q);
-uint16_t q_readshort_be(ot_queue* q);
+uint16_t q_readshort(bintex_q* q);
+uint16_t q_readshort_be(bintex_q* q);
 
 
 /** @brief Reads a 32 bit long integer at the Queue's getcursor, and advances it
-  * @param q        (ot_queue*) Pointer to the Queue ADT
+  * @param q        (bintex_q*) Pointer to the Queue ADT
   * @retval uint32_t  Long integer read.
   * @ingroup Queue
   * @note The _be variant will use big endian, which is fast for copying data
@@ -345,11 +345,11 @@ uint16_t q_readshort_be(ot_queue* q);
   *       endian for data streams.  The normal variant will do endian conversion
   *       in order to move integers from memory to the queue.
   */
-uint32_t q_readlong(ot_queue* q);
+uint32_t q_readlong(bintex_q* q);
 
 
-void q_writestring(ot_queue* q, uint8_t* string, int length);
-void q_readstring(ot_queue* q, uint8_t* string, int length);
+void q_writestring(bintex_q* q, uint8_t* string, int length);
+void q_readstring(bintex_q* q, uint8_t* string, int length);
 
 
 #endif
