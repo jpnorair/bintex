@@ -3,15 +3,23 @@ CC=gcc
 THISMACHINE := $(shell uname -srm | sed -e 's/ /-/g')
 THISSYSTEM	:= $(shell uname -s)
 
-VERSION     ?= "0.5.0"
+VERSION     ?= 0.5.0
 PACKAGEDIR  ?= ./../_hbpkg/$(THISMACHINE)/bintex.$(VERSION)
 
-BINTEX_TARGET      := libbintex.a
+ifeq ($(THISSYSTEM),Darwin)
+# Mac can't do conditional selection of static and dynamic libs at link time.
+#	PRODUCTS := libbintex.dylib libbintex.a
+	PRODUCTS := libbintex.a
+else ifeq ($(THISSYSTEM),Linux)
+	PRODUCTS := libbintex.so libbintex.a
+else
+	error "THISSYSTEM set to unknown value: $(THISSYSTEM)"
+endif
 
 SRCDIR      := .
 INCDIR      := .
-BUILDDIR    := build
-TARGETDIR   := bin
+BUILDDIR    := build/$(THISMACHINE)
+TARGETDIR   := bin/$(THISMACHINE)
 RESDIR      := 
 SRCEXT      := c
 DEPEXT      := d
@@ -30,17 +38,16 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJE
 
 
 all: lib
-lib: resources $(BINTEX_TARGET)
+lib: resources $(PRODUCTS)
 remake: cleaner all
-	
 
 install:
+	@rm -rf $(PACKAGEDIR)
 	@mkdir -p $(PACKAGEDIR)
-	@cp -R ./libbintex.a $(PACKAGEDIR)/
-	@cp -R ./*.h $(PACKAGEDIR)/
 	@rm -f $(PACKAGEDIR)/../bintex
+	@cp -R $(TARGETDIR)/* $(PACKAGEDIR)/
+	@cp -R ./*.h $(PACKAGEDIR)/
 	@ln -s bintex.$(VERSION) ./$(PACKAGEDIR)/../bintex
-
 
 #Copy Resources from Resources Directory to Target Directory
 resources: directories
@@ -61,11 +68,18 @@ cleaner: clean
 
 #Pull in dependency info for *existing* .o files
 -include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
+	
+#Build the dynamic library
+libbintex.so: $(OBJECTS)
+	$(CC) -shared -fPIC -Wl,-soname,libbintex.so.1 -o $(TARGETDIR)/$@.$(VERSION) $(OBJECTS) -lc
 
-#Build the static library
+libbintex.dylib: $(OBJECTS)
+	$(CC) -dynamiclib -o $(TARGETDIR)/$@ $(OBJECTS)
+
+#Build static library -- same on all POSIX
 libbintex.a: $(OBJECTS)
-	ar -rcs ./libbintex.a $(OBJECTS)
-	ranlib libbintex.a
+	ar -rcs $(TARGETDIR)/$@ $(OBJECTS)
+	ranlib $(TARGETDIR)/$@
 
 #Compile
 $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
