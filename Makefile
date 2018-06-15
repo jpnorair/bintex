@@ -48,6 +48,7 @@ install:
 	@cp -R $(TARGETDIR)/* $(PACKAGEDIR)/
 	@cp -R ./*.h $(PACKAGEDIR)/
 	@ln -s bintex.$(VERSION) ./$(PACKAGEDIR)/../bintex
+	cd ../_hbsys && $(MAKE) sys_install INS_MACHINE=$(THISMACHINE) INS_PKGNAME=bintex
 
 #Copy Resources from Resources Directory to Target Directory
 resources: directories
