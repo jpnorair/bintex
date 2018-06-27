@@ -40,6 +40,7 @@ OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJE
 all: lib
 lib: resources $(PRODUCTS)
 remake: cleaner all
+pkg: lib install
 
 install:
 	@rm -rf $(PACKAGEDIR)

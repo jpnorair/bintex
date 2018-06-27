@@ -1,4 +1,4 @@
-/*  Copyright 2010-2012, JP Norair
+/*  Copyright 2010-2018, JP Norair
   *
   * Licensed under the OpenTag License, Version 1.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 /**
   * @file       bintex.c
   * @author     JP Norair
-  * @version    V1.0
-  * @date       13 May 2011
+  * @version    V1.1
+  * @date       27 Jun 2018
   * @brief      BinTex parser
   * @ingroup    BinTex
   *
@@ -29,7 +29,9 @@
 
 
 #define IS_WHITESPACE(VAL)  ((VAL==' ')||(VAL=='\r')||(VAL=='\n')||(VAL=='\t'))
-
+#define IS_HEXVAL(VAL)      ((((VAL)>='0') && ((VAL)<='9')) || (((VAL)>='a') && ((VAL)<='f')) || (((VAL)>='A') && ((VAL)<='F')))
+#define IS_DECVAL(VAL)      (((VAL)>='0') && ((VAL)<='9'))
+#define IS_BINVAL(VAL)      (((VAL)>='0') && ((VAL)<='1'))
 
 
 typedef enum {
@@ -45,25 +47,36 @@ typedef enum {
     DATA_decblock
 } Data_type;
 
-int buffer_limit;
+
+/// Global Variables.  
+///@todo Should be moved into object.
+static int (*sub_getc)(void* stream);
+static int (*sub_validatehex)(void* stream);
+static int (*sub_validatedec)(void* stream);
 
 
-int (*sub_getc)(void* stream);
-int sub_buffergetc(void* stream);
-int sub_filegetc(void* stream);
+static int sub_buffergetc(void* stream);
+static int sub_filegetc(void* stream);
+static int sub_buffer_validatehex(void* stream);
+static int sub_file_validatehex(void* stream);
+static int sub_buffer_validatedec(void* stream);
+static int sub_file_validatedec(void* stream);
 
 
-int sub_parsestream(void* stream, bintex_q* msg);
-Data_type sub_parse_header(void* stream);
-int sub_passcomment(void* stream);
-int sub_getascii(void* stream, bintex_q* msg);
-int sub_gethexblock(void* stream, bintex_q* msg);
-int sub_getdecblock(void* stream, bintex_q* msg);
-int sub_gethexnum(int* status, void* stream, bintex_q* msg);
-int sub_getbinnum(int* status, void* stream, bintex_q* msg);
-char sub_char2hex(char* output, char input);
-int sub_getdecnum(int* status, void* stream, bintex_q* msg);
-int sub_buffernum(int* status, void* stream, char* buf, int limit);
+static int sub_parsestream(void* stream, bintex_q* msg);
+static Data_type sub_parse_header(void* stream);
+static int sub_passcomment(void* stream);
+static int sub_getascii(void* stream, bintex_q* msg);
+static int sub_gethexblock(void* stream, bintex_q* msg);
+static int sub_getdecblock(void* stream, bintex_q* msg);
+static int sub_gethexnum(int* status, void* stream, bintex_q* msg);
+static int sub_getbinnum(int* status, void* stream, bintex_q* msg);
+static char sub_char2hex(char input);
+static int sub_getdecnum(int* status, void* stream, bintex_q* msg);
+
+static int sub_bindigits(int* status, void* stream, char* buf, int limit);
+static int sub_hexdigits(int* status, void* stream, char* buf, int limit);
+static int sub_decdigits(int* status, void* stream, char* buf, int limit);
 
 
 static void q_init(bintex_q* q, uint8_t* buffer, uint16_t alloc);
@@ -111,7 +124,10 @@ typedef union {
 
 
 int bintex_iter_fq(FILE* file, bintex_q* msg) {
-    sub_getc = &sub_filegetc;
+    sub_getc        = &sub_filegetc;
+    sub_validatehex = &sub_file_validatehex;
+    sub_validatedec = &sub_file_validatedec;
+    
     return sub_parsestream((void*)file, msg);
 }
 
@@ -160,7 +176,9 @@ int bintex_fs(FILE* file, unsigned char* stream_out, int size) {
 
 int bintex_iter_sq(unsigned char **string, bintex_q* msg, int size) {
     sub_getc        = &sub_buffergetc;
-    buffer_limit    = size;
+    sub_validatehex = &sub_buffer_validatehex;
+    sub_validatedec = &sub_buffer_validatedec;
+    
     return sub_parsestream((void*)string, msg);
 }
 
@@ -208,7 +226,10 @@ int bintex_ss(unsigned char *string, unsigned char* stream_out, int size) {
 
 
 // Input Parser Tester (comment out when using library)
-#if (0) //defined(__DEBUG__)
+#ifdef __BINTEX_TEST__
+int parsefile_main(int argc, char** argv);
+int parsestring_main(int argc, char** argv);
+
 int main(int argc, char** argv) {
     //return parsefile_main(argc, argv);
     return parsestring_main(argc, argv);
@@ -251,12 +272,21 @@ int parsestring_main(int argc, char** argv) {
     unsigned char   stream[512];
     unsigned char*  input;
     unsigned char*  output;
+    size_t bytes_out;
     
-    strcpy(string, "[00 11 22 33] (32 64 96 128) d-5930 x9933 \"Blah\"");
+    //strcpy((char*)string, "[00 11 22 33] (32 64 96 128) d-5930 x9933 \"Blah\"");
+    strcpy((char*)string, "[11223344 55667788 2233445566]");
     
     input   = string;
     
-    printf("%d Bytes written to output\n", bintex_ss(&input, stream, 512));
+    bytes_out = bintex_ss(input, stream, 512);
+    
+    printf("%zu Bytes written to output\n", bytes_out);
+    
+    for (int i=0; i<bytes_out; i++) {
+        printf("%02X ", stream[i]);
+    }
+    printf("\n");
     
     return 0;
 }
@@ -269,29 +299,136 @@ int parsestring_main(int argc, char** argv) {
 
 
 
-int sub_buffergetc(void* stream) {
-    buffer_limit--;
-    if (buffer_limit >= 0) {
-        unsigned char c;
-        unsigned char **s;
-        s   = (unsigned char**)stream;
-        c   = **s;          //get character
-        *s  = *s + 1;       //increment buffer
-        
-        if (c != 0)     //no EOFs
-            return c;
-    }
+static int sub_buffergetc(void* stream) {
+    unsigned char c;
+    unsigned char **s;
+    s   = (unsigned char**)stream;
+    c   = **s;          //get character
+    *s  = *s + 1;       //increment buffer
     
-    return -1;
+    if (c != 0) {     //no EOFs
+        return c;
+    }
+    else {
+        return -1;
+    }    
 }
 
-int sub_filegetc(void* stream) {
+
+static int sub_filegetc(void* stream) {
     return fgetc((FILE*)stream);
 }
 
 
+static int sub_buffer_validatehex(void* stream) {
+    char* front;
+    int bytes_read;
+    
+    front = *(char**)stream;
+    
+    while (1) {
+        char a = *front++;
+        bytes_read++;
+        
+        if (a == 0) {
+            break;
+        }
+        if (a == ']') {
+            bytes_read = 0;
+            break;
+        }
+        if (!IS_HEXVAL(a) && !IS_WHITESPACE(a)) {
+            break;
+        }
+    }
+    
+    return bytes_read;
+}
 
-int sub_parsestream(void* stream, bintex_q* msg) {
+static int sub_file_validatehex(void* stream) {
+    fpos_t pos;
+    int bytes_read;
+    
+    fgetpos((FILE*)stream, &pos);
+    
+    while (1) {
+        int a = fgetc((FILE*)stream);
+        bytes_read++;
+        
+        if (a == EOF) {
+            break;
+        }
+        if (a == ']') {
+            bytes_read = 0;
+            break;
+        }
+        if (!IS_HEXVAL(a) && !IS_WHITESPACE(a)) {
+            break;
+        }
+    }
+    
+    fsetpos((FILE*)stream, &pos);
+    
+    return bytes_read;
+}
+
+static int sub_buffer_validatedec(void* stream) {
+    char* front;
+    int bytes_read;
+    
+    front = *(char**)stream;
+    
+    while (1) {
+        char a = *front++;
+        bytes_read++;
+        
+        if (a == 0) {
+            break;
+        }
+        if (a == ')') {
+            bytes_read = 0;
+            break;
+        }
+        if (!IS_DECVAL(a) && !IS_WHITESPACE(a)) {
+            break;
+        }
+    }
+    
+    return bytes_read;
+}
+
+static int sub_file_validatedec(void* stream) {
+    fpos_t pos;
+    int bytes_read;
+    
+    fgetpos((FILE*)stream, &pos);
+    
+    while (1) {
+        int a = fgetc((FILE*)stream);
+        bytes_read++;
+        
+        if (a == EOF) {
+            break;
+        }
+        if (a == ')') {
+            bytes_read = 0;
+            break;
+        }
+        if (!IS_DECVAL(a) && !IS_WHITESPACE(a)) {
+            break;
+        }
+    }
+    
+    fsetpos((FILE*)stream, &pos);
+    
+    return bytes_read;
+}
+
+
+
+
+
+static int sub_parsestream(void* stream, bintex_q* msg) {
     int status;
 
     switch (sub_parse_header(stream)) {
@@ -316,7 +453,7 @@ int sub_parsestream(void* stream, bintex_q* msg) {
 
 
 
-Data_type sub_parse_header(void* stream) {
+static Data_type sub_parse_header(void* stream) {
     char next;
 
     parse_header_getchar:
@@ -346,7 +483,7 @@ Data_type sub_parse_header(void* stream) {
 
 
 
-int sub_passcomment(void* stream) {
+static int sub_passcomment(void* stream) {
     char subcomment[8];
     int next;
     int i = 0;
@@ -402,7 +539,7 @@ int sub_passcomment(void* stream) {
 
 
 
-int sub_getascii(void* stream, bintex_q* msg) {
+static int sub_getascii(void* stream, bintex_q* msg) {
     char    next;
     int     bytes_written;
     
@@ -442,10 +579,13 @@ int sub_getascii(void* stream, bintex_q* msg) {
 
 
 
-int sub_gethexblock(void* stream, bintex_q* msg) {
-    int status = 0;
+static int sub_gethexblock(void* stream, bintex_q* msg) {
+    int status;
     int bytes_written;
     bytes_written = q_length(msg);
+
+    // Validate the hex block
+    status = sub_validatehex(stream);
 
     while (status == 0) {
         sub_gethexnum(&status, stream, msg);
@@ -458,9 +598,11 @@ int sub_gethexblock(void* stream, bintex_q* msg) {
 
 
 
-int sub_getdecblock(void* stream, bintex_q* msg) {
+static int sub_getdecblock(void* stream, bintex_q* msg) {
     int status = 0;
     int bytes_written = q_length(msg);
+
+
 
     while (status == 0) {
         sub_getdecnum(&status, stream, msg);
@@ -472,7 +614,7 @@ int sub_getdecblock(void* stream, bintex_q* msg) {
 
 
 
-int sub_getbinnum(int* status, void* stream, bintex_q* msg) {
+static int sub_getbinnum(int* status, void* stream, bintex_q* msg) {
     int     digits;
     int     i = 0;
     int     shift;
@@ -480,7 +622,7 @@ int sub_getbinnum(int* status, void* stream, bintex_q* msg) {
     char    byte = 0;
     char    buf[33];
     
-    digits = sub_buffernum(status, stream, buf, 32);
+    digits = sub_bindigits(status, stream, buf, 32);
     
     // If the length of digits is not byte-aligned, pad first byte
     shift = (digits & 7);
@@ -505,35 +647,22 @@ int sub_getbinnum(int* status, void* stream, bintex_q* msg) {
 
 
 
-int sub_gethexnum(int* status, void* stream, bintex_q* msg) {
+static int sub_gethexnum(int* status, void* stream, bintex_q* msg) {
     int     digits;
     int     i = 0;
-    char    next;
-    char    buf[33];
-    
-    digits = sub_buffernum(status, stream, buf, 32);
+    char    buf[72];
+
+    digits = sub_hexdigits(status, stream, buf, 64);
     
     // If the length of digits is odd, write the first hex nibble as a byte
     if (digits & 1) {      
-        if (sub_char2hex(&next, buf[i++]) != 0) {
-            next = 0;
-        }
-        q_writebyte(msg, next);
+        q_writebyte(msg, sub_char2hex(buf[i++]));
     }
     
     while (i < digits) {       
         char byte_data;
-        
-        if (sub_char2hex(&next, buf[i++]) != 0) {
-            next = 0;
-        }
-        byte_data = (next << 4) & 0xF0;
-        
-        if (sub_char2hex(&next, buf[i++]) != 0) {
-            next = 0;
-        }
-        byte_data |= next & 0x0F;
-        
+        byte_data = (sub_char2hex(buf[i++]) << 4) & 0xF0;
+        byte_data |= sub_char2hex(buf[i++]) & 0x0F;
         q_writebyte(msg, byte_data);        
     }
     
@@ -543,33 +672,30 @@ int sub_gethexnum(int* status, void* stream, bintex_q* msg) {
 
 
 
-char sub_char2hex(char* output, char input) {
-    int status = 0;
-    *output = input;
+static char sub_char2hex(char input) {
+    char output = input;
 
     if ((input >= '0') && (input <= '9')) {
-        *output -= '0';
+        output -= '0';
     }
     else if ((input >= 'a') && (input <= 'f')) {
-        *output -= ('a' - 10);
-        //*output += 10;
+        output -= ('a' - 10);
     }
     else if ((input >= 'A') && (input <= 'F')) {
-        *output -= ('A' - 10);
-        //*output += 10;
+        output -= ('A' - 10);
     }
     else {
-        status = 255;  //input error
+        output = 0;
     }
     
-    return status;
+    return output;
 }
 
 
 
 
 
-int sub_getdecnum(int* status, void* stream, bintex_q* msg) {
+static int sub_getdecnum(int* status, void* stream, bintex_q* msg) {
     int     digits;
   //char    next;
     char    buf[16];
@@ -580,7 +706,7 @@ int sub_getdecnum(int* status, void* stream, bintex_q* msg) {
     int     size    = 0;
     
     // Buffer until whitespace or ')' delimiter 
-    digits = sub_buffernum(status, stream, buf, 15);
+    digits = sub_decdigits(status, stream, buf, 15);
     
     // Deal with leading minus sign
     if (buf[i] == '-') {
@@ -637,29 +763,70 @@ int sub_getdecnum(int* status, void* stream, bintex_q* msg) {
 }
 
 
-
-int sub_buffernum(int* status, void* stream, char* buf, int limit) {
+static int sub_hexdigits(int* status, void* stream, char* buf, int limit) {
     int digits;
     digits  = 0;
     *status = 0;
         
-    while(digits < limit) {
+    while (digits < limit) {
         buf[digits] = sub_getc(stream);
-        
-        if ((buf[digits] == ')') || (buf[digits] == ']')) {
-            *status = 255;
+        if (buf[digits] == ']') {
+            *status = 1;
             break;
         }
-        if (IS_WHITESPACE(buf[digits])) {
+        if (!IS_HEXVAL(buf[digits])) {
+            if (!IS_WHITESPACE(buf[digits])) {
+                *status = 2;
+            }
             break;
         }
-        
         digits++;
     }
     
     return digits;
 }
 
+static int sub_decdigits(int* status, void* stream, char* buf, int limit) {
+    int digits;
+    digits  = 0;
+    *status = 0;
+        
+    while (digits < limit) {
+        buf[digits] = sub_getc(stream);
+        if (buf[digits] == ')') {
+            *status = 1;
+            break;
+        }
+        if (!IS_DECVAL(buf[digits])) {
+            if (!IS_WHITESPACE(buf[digits])) {
+                *status = 2;
+            }
+            break;
+        }
+        digits++;
+    }
+    
+    return digits;
+}
+
+static int sub_bindigits(int* status, void* stream, char* buf, int limit) {
+    int digits;
+    digits  = 0;
+    *status = 0;
+        
+    while (digits < limit) {
+        buf[digits] = sub_getc(stream);
+        if (!IS_BINVAL(buf[digits])) {
+            if (!IS_WHITESPACE(buf[digits])) {
+                *status = 2;
+            }
+            break;
+        }
+        digits++;
+    }
+    
+    return digits;
+}
 
 
 
