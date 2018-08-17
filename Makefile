@@ -94,6 +94,6 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
 
 #Non-File Targets
-.PHONY: all lib remake clean cleaner resources
+.PHONY: all lib pkg remake clean cleaner resources
 
 
