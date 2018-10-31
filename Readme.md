@@ -1,14 +1,14 @@
-About BinTex
-============
+# About BinTex
+
 http://www.indigresso.com/wiki/doku.php?id=opentag:otlibext:bintex
 
 BinTex is a very simple markup language for notating binary datastreams in human-readable text.  It might not even be considered a markup-language, but, in any case, it is a nice way to write data.
 
-About the code
-==============
+## About the code
+
 There are two variants of the code.
 
-1. bintex_ot
+1. bintex\_ot
 This variant must be made (i.e. make ...) with a makefile including a POSIX app for OpenTag, such as null_posix.  It uses the Queue Module, and the Queue Module uses platform_memcpy(), so there is shared code.
 
 2. bintex
