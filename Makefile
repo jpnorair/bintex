@@ -12,6 +12,8 @@ ifeq ($(THISSYSTEM),Darwin)
 	PRODUCTS := libbintex.a
 else ifeq ($(THISSYSTEM),Linux)
 	PRODUCTS := libbintex.so libbintex.a
+else ifeq ($(THISSYSTEM),CYGWIN_NT-10.0)
+	PRODUCTS := libbintex.a
 else
 	error "THISSYSTEM set to unknown value: $(THISSYSTEM)"
 endif
