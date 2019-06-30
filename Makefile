@@ -29,9 +29,9 @@ DEPEXT      := d
 OBJEXT      := o
 
 CFLAGS      ?= -std=gnu99 -O3 -fPIC
-LIB         := 
-INC         := -I$(INCDIR)
-INCDEP      := -I$(INCDIR)
+LIB         := $(EXT_LIB)
+INC         := -I$(INCDIR) $(EXT_INC) 
+INCDEP      := -I$(INCDIR) $(EXT_INC) 
 
 #SOURCES     := $(shell find $(SRCDIR) -type f -name "*.$(SRCEXT)")
 SOURCES     := $(shell ls $(SRCDIR)/*.$(SRCEXT))
