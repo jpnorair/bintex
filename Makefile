@@ -19,6 +19,10 @@ LD := ld
 THISMACHINE ?= $(shell uname -srm | sed -e 's/ /-/g')
 THISSYSTEM	?= $(shell uname -s)
 
+EXT_INC     ?= 
+EXT_LIBINC  ?= 
+EXT_LIBFLAGS?=
+
 VERSION     ?= 0.5.0
 PACKAGEDIR  ?= ./../_hbpkg/$(THISMACHINE)/bintex.$(VERSION)
 
@@ -26,6 +30,8 @@ ifeq ($(THISSYSTEM),Darwin)
 # Mac can't do conditional selection of static and dynamic libs at link time.
 #	PRODUCTS := libbintex.dylib libbintex.a
 	PRODUCTS := libbintex.a
+	EXT_INC := -I/opt/homebrew/include $(EXT_INC)
+	EXT_LIBINC := -L/opt/homebrew/lib $(EXT_LIBINC)
 else ifeq ($(THISSYSTEM),Linux)
 	PRODUCTS := libbintex.so libbintex.a
 else ifeq ($(THISSYSTEM),CYGWIN_NT-10.0)
@@ -44,7 +50,7 @@ DEPEXT      := d
 OBJEXT      := o
 
 CFLAGS      ?= -std=gnu99 -O3 -fPIC
-LIB         := $(EXT_LIB)
+LIB         := $(EXT_LIBINC) $(EXT_LIB)
 INC         := -I$(INCDIR) $(EXT_INC) 
 INCDEP      := -I$(INCDIR) $(EXT_INC) 
 
